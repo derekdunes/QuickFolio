@@ -95,7 +95,8 @@ class HomeController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show(User $user)
-    {			//increment the user views
+    {			
+    				//increment the user views
     				$count = $user->views + 1;
     				
     				$user->views = $count
@@ -104,10 +105,17 @@ class HomeController extends Controller
     				
         //get the theme
         $theme = $user->template()->name;
-
-        $path = $theme . '.show';
-
-        return view($path, compact('user'));
+							
+							$path = 'theme.' . $theme . '.show';
+							$default = 'theme.default.show';
+							
+							//if theme path does not exist
+							//switch to default theme
+        if(View::exists($path)){
+        			return view($path, compact('user'));
+        }
+       
+        return view($default, compact('user'));
 
     }
 
