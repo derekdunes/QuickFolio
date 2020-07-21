@@ -20,6 +20,9 @@ Route::get('/', function () {
 Route::resource('template','TemplateController');
 Route::resource('stack','StackController');
 Route::resource('project','ProjectController');
+Route::resource('user', 'HomeController');
+
+
 
 
 

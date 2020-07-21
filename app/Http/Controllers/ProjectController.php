@@ -6,7 +6,6 @@ use File;
 use App\Project;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
 
 class ProjectController extends Controller
 {
@@ -115,7 +114,7 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        //
+        return view('project.show', compact('project'));
     }
 
     /**
@@ -138,11 +137,7 @@ class ProjectController extends Controller
      */
     public function update(Request $req, Project $project)
     {   
-        //if this logged in user is not the user that created the project
-        //then reject the data
-        if (auth()->user()->id != $project->user_id)
-            return back()->with('error','This is not your project so you cant Update it');
-
+    
         $name = $req->name;
         $url = $req->url;
 
@@ -155,7 +150,7 @@ class ProjectController extends Controller
         //Add image
         if ($req->hasFile('image')) {
             # code...
-            $image = Input::file('image');
+            $image = $req->image;
             $filename = $image->getClientOriginalName();
 
             $filename = pathinfo($filename, PATHINFO_FILENAME);
@@ -165,14 +160,14 @@ class ProjectController extends Controller
             $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
             //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.project_folder'), $fullname);
+            $upload = $image->move(Config('image.project_folder'), $fullname);
 
             if ($upload) {
 
                 //if the new image was successfully uploaded delete the old image
                 $oldImage = $project->image;
 
-                $path = Config::get('image.project_folder') . '/' . $oldImage;
+                $path = Config('image.project_folder') . '/' . $oldImage;
 
                 if(File::exists($path)){
                     File::delete($path);
@@ -186,7 +181,7 @@ class ProjectController extends Controller
 
         $project->save();
 
-        return redirect('project.index')->with('message', $name . ' created successfully');
+        return redirect('project')->with('message', $name . ' created successfully');
     }
 
     /**
@@ -196,7 +191,10 @@ class ProjectController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function destroy(Project $project)
-    {
+    {			$name = $project->name;
         $project->delete();
+        
+        return redirect('project')->with('message', $name . ' deleted successfully');
+        
     }
 }

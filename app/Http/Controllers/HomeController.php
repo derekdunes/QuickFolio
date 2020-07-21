@@ -9,7 +9,6 @@ use App\Stack;
 use App\Project;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
 
 class HomeController extends Controller
 {
@@ -63,7 +62,7 @@ class HomeController extends Controller
         //Add image
         if ($req->hasFile('image')) {
             # code...
-            $image = Input::file('image');
+            $image = $req->image;
             $filename = $image->getClientOriginalName();
 
             $filename = pathinfo($filename, PATHINFO_FILENAME);
@@ -73,20 +72,19 @@ class HomeController extends Controller
             $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
             //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.project_folder'), $fullname);
+            $upload = $image->move(Config('image.project_folder'), $fullname);
 
             if ($upload) {
 
                 if ($fullname) 
                     $project->image = $fullname;
-
             }
 
         }
 
         $project->save();
 
-        return redirect('project.index')->with('message', $name . ' created successfully');
+        return redirect('project')->with('message', $name . ' created successfully');
 
     }
 
@@ -97,13 +95,19 @@ class HomeController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show(User $user)
-    {
+    {			//increment the user views
+    				$count = $user->views + 1;
+    				
+    				$user->views = $count
+    				
+    				$user->save();
+    				
         //get the theme
         $theme = $user->template()->name;
 
         $path = $theme . '.show';
 
-        return view($path, compact('user'))
+        return view($path, compact('user'));
 
     }
 
@@ -125,7 +129,7 @@ class HomeController extends Controller
      * @param  \App\Project  $project
      * @return \Illuminate\Http\Response
      */
-    public function updateProfile(Request $req, User $user)
+    public function update(Request $req, User $user)
     {   
         //if this logged in user is not the user that created the project
         //then reject the data
@@ -170,7 +174,7 @@ class HomeController extends Controller
         //Add image
         if ($req->hasFile('image')) {
             # code...
-            $image = Input::file('image');
+            $image = $req->image;
             $filename = $image->getClientOriginalName();
 
             $filename = pathinfo($filename, PATHINFO_FILENAME);
@@ -180,14 +184,14 @@ class HomeController extends Controller
             $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
             //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.user_folder'), $fullname);
+            $upload = $image->move(Config('image.user_folder'), $fullname);
 
             if ($upload) {
 
                 //if the new image was successfully uploaded delete the old image
                 $oldImage = $user->image;
 
-                $path = Config::get('image.user_folder') . '/' . $oldImage;
+                $path = Config('image.user_folder') . '/' . $oldImage;
 
                 if(File::exists($path)){
                     File::delete($path);
@@ -202,38 +206,9 @@ class HomeController extends Controller
         $user->save();
 
 
-
-        $template = Template::all();
-        //redirect to choose theme form
-        return redirect('user.template')->with('template', $template);
-    }
-
-       /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Project  $project
-     * @return \Illuminate\Http\Response
-     */
-    public function updateTemplate(Request $req, User $user)
-    {   
-        //if this logged in user is not the user that created the project
-        //then reject the data
-        if (auth()->user()->id != $user->id)
-            return back()->with('error','This is not your project so you cant Update it');
-
-
-        $template = $req->template;
-        
-
-        if ($template) 
-            $user->template_id = $template;
-
-        $user->save();
-
-        $stack = Stack::all();
-
-        return redirect('user.showStackForm')->with('message', 'Theme selected successfully, Now Choose your Technology Stack', compact('stack'));
+							$stack = Stack::all();
+	
+	       return redirect('user.chooseStack', compact('stack'));
 
     }
 
@@ -276,7 +251,7 @@ class HomeController extends Controller
             }
         }
 
-       return redirect('user.showProjectForm')->with('user', $user);
+       return view('user.createProject', compact('user'));
 
     }
 
@@ -286,7 +261,7 @@ class HomeController extends Controller
         if ($request->hasFile('image')) {
             # code...
 
-            $images = Input::file('image');
+            $images = $req->image;
             $urls = $req->url;
             $names = $req->name;
 
@@ -309,7 +284,7 @@ class HomeController extends Controller
                     $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
                     //upload image to upload folder then make a thumbnail from the upload image
-                    $upload = $image->move(Config::get('image.project_folder'), $fullname);
+                    $upload = $image->move(Config('image.project_folder'), $fullname);
 
                     if ($upload) {
                         //create new model object to save the data
@@ -332,8 +307,11 @@ class HomeController extends Controller
                     }
 
             }
-
-            return redirect('home')->with('success', 'Your Portfolio was added Successfully! ');            
+ 
+            
+        $template = Template::all();
+        //redirect to choose theme form
+        return view('user.chooseTemplate', compact('template'));           
         
         }else{
 
@@ -348,6 +326,34 @@ class HomeController extends Controller
 
         return back()->with('error',"Images does not exist Exist");
     }
+    
+     /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Project  $project
+     * @return \Illuminate\Http\Response
+     */
+    public function updateTemplate(Request $req, User $user)
+    {   
+        //if this logged in user is not the user that created the project
+        //then reject the data
+        if (auth()->user()->id != $user->id)
+            return back()->with('error','This is not your project so you cant Update it');
+
+
+        $template = $req->template;
+        
+
+        if ($template) 
+            $user->template_id = $template;
+
+        $user->save();
+        
+        return redirect('home')->with('success', 'Your Portfolio was added Successfully! ');
+    }
+
+    
 
     /**
      * Remove the specified resource from storage.
