@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use File;
 use App\Project;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 
@@ -37,46 +38,72 @@ class ProjectController extends Controller
      */
     public function store(Request $req)
     {
-        $project = new Project();
 
-        $name = $req->name;
-        $url = $req->url;
+        if ($request->hasFile('image')) {
+                # code...
 
-        if ($name) 
-            $project->name = $name;
+                $images = $req->image;
+                $names = $req->name;
+                $urls = $req->url;
 
-        if ($url)
-            $project->url = $url;
+                //make sure the images are same with s/n
+                if (count($images) == count($names) && count($images) == count($urls) && count($names) == count($urls)) {
+                    
+                    //loop through both array and store the values in the db
+                    for ($i = 0; $i < count($images); $i++) {
+                        
+                        //save the image
+                        //if validation passes
+                        $image = $images[$i];
 
-        if (auth()->user()->id)
-            $project->user_id = auth()->user()->id;
+                        $filename = $image->getClientOriginalName();
 
-        //Add image
-        if ($req->hasFile('image')) {
-            # code...
-            $image = Input::file('image');
-            $filename = $image->getClientOriginalName();
+                        $filename = pathinfo($filename, PATHINFO_FILENAME);
 
-            $filename = pathinfo($filename, PATHINFO_FILENAME);
+                        //in production check if url/image file name already exist
+                        //make the url friendly
+                        $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
-            //in production check if url/image file name already exist
-            //make the url friendly
-            $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
+                        //upload image to upload folder then make a thumbnail from the upload image
+                        $upload = $image->move(Config('image.project_folder'), $fullname);
 
-            //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.project_folder'), $fullname);
+                        if ($upload) {
+                            //create new model object to save the data
+                            $project = new Project();
 
-            if ($upload) {
+                            if ($name) 
+                                $project->name = $name;
 
-                if ($fullname) 
-                    $project->image = $fullname;
+                            if ($url)
+                                $project->url = $url;
 
+                            if ($fullname) 
+                                $project->image = $fullname;
+
+                            if (auth()->user()->id)
+                                $project->user_id = auth()->user()->id;
+
+                            $project->save();
+                                
+                        }
+
+                }
+
+                return redirect('project')->with('success', 'Your Images were added Successfully! ');            
+            
+            }else{
+
+                    return back()->with('error',"Images and Names don't Match");
+            
             }
+
+        } else{
+
+            return back()->with('error',"Images and Serial No don't Match"); 
+        
         }
 
-        $project->save();
-
-        return redirect('project.index')->with('message', $name . ' created successfully');
+        return redirect('project')->with('message', $name . ' created successfully');
 
     }
 

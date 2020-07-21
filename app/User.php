@@ -38,7 +38,7 @@ class User extends Authenticatable
     ];
 
     public function stacks(){
-        return $this->belongsToMany( Stack::class, 'user_stack','user_id','stack_id');
+        return $this->belongsToMany( Stack::class, 'user_stack','user_id','stack_id')->withPivot('level','years');
     }
 
     public function projects(){

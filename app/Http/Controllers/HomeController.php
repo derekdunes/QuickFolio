@@ -7,6 +7,7 @@ use App\User;
 use App\Template;
 use App\Stack;
 use App\Project;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 
@@ -98,7 +99,7 @@ class HomeController extends Controller
     public function show(User $user)
     {
         //get the theme
-        $theme = $user->tepmlate()->name;
+        $theme = $user->template()->name;
 
         $path = $theme . '.show';
 
@@ -133,6 +134,7 @@ class HomeController extends Controller
 
 
         $name = $req->name;
+        $title = $req->title;
         $password = $req->password;
         $bio = $req->bio;
         $linkedin = $req->linkedin;
@@ -143,6 +145,9 @@ class HomeController extends Controller
 
         if ($name) 
             $user->name = $name;
+
+        if ($title) 
+            $user->title = $title;
 
         if ($password)
             $user->password = Hash::make($password);
@@ -196,6 +201,8 @@ class HomeController extends Controller
 
         $user->save();
 
+
+
         $template = Template::all();
         //redirect to choose theme form
         return redirect('user.template')->with('template', $template);
@@ -226,12 +233,13 @@ class HomeController extends Controller
 
         $stack = Stack::all();
 
-        return redirect('user.showStackForm')->with('message', 'Theme selected successfully, Now Choose your Technology Stack');
+        return redirect('user.showStackForm')->with('message', 'Theme selected successfully, Now Choose your Technology Stack', compact('stack'));
+
     }
 
     public function updateStack(Request $req, User $user){
 
-        $stacks = $req->stacks;
+        
 
         if(isset($stacks)  && count($stacks) > 0)
         {
@@ -247,6 +255,26 @@ class HomeController extends Controller
 
             }
        }
+
+        $stacks = $req->stacks;
+        $levels = $request->levels;
+        $years = $request->years;
+
+        //check if casts amd roles is set and if the aew equal
+        if(isset($stacks) && isset($levels) && isset($years) && count($stacks) == count($levels) && count($stacks) == count($years))
+        {
+            //for each cast
+            //find the cast and add to the pivot table 
+            for ($i = 0; $i < count($stacks); $i++) { 
+
+                $stack = Stack::find($stacks[$i]);
+
+                if ($stack) {
+                    $user->stacks()->sync($stack, ['level' => $levels[$i], 'years' => $years[$i] ], false);
+                }
+
+            }
+        }
 
        return redirect('user.showProjectForm')->with('user', $user);
 

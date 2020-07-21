@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use File;
 use App\Stack;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
 
 class StackController extends Controller
 {
@@ -47,7 +47,7 @@ class StackController extends Controller
                 //Add image
         if ($req->hasFile('image')) {
             # code...
-            $image = Input::file('image');
+            $image = $req->image;
             $filename = $image->getClientOriginalName();
 
             $filename = pathinfo($filename, PATHINFO_FILENAME);
@@ -57,7 +57,7 @@ class StackController extends Controller
             $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
             //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.stack_folder'), $fullname);
+            $upload = $image->move(Config('image.stack_folder'), $fullname);
 
             if ($upload) {
 
@@ -69,7 +69,7 @@ class StackController extends Controller
 
         $stack->save();
 
-        return redirect('stack.index')->with('message', $name . ' created successfully');
+        return view('stack.index')->with('message', $name . ' created successfully');
 
     }
 
@@ -102,7 +102,7 @@ class StackController extends Controller
      * @param  \App\Stack  $stack
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Stack $stack)
+    public function update(Request $req, Stack $stack)
     {
         $name = $req->name;
 
@@ -112,7 +112,7 @@ class StackController extends Controller
                 //Add image
         if ($req->hasFile('image')) {
             # code...
-            $image = Input::file('image');
+            $image = $req->image;
             $filename = $image->getClientOriginalName();
 
             $filename = pathinfo($filename, PATHINFO_FILENAME);
@@ -122,14 +122,14 @@ class StackController extends Controller
             $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
             //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.stack_folder'), $fullname);
+            $upload = $image->move(Config('image.stack_folder'), $fullname);
 
             if ($upload) {
 
                 //if the new image was successfully uploaded delete the old image
                 $oldImage = $stack->image;
 
-                $path = Config::get('image.stack_folder') . '/' . $oldImage;
+                $path = Config('image.stack_folder') . '/' . $oldImage;
 
                 if(File::exists($path)){
                     File::delete($path);
@@ -143,7 +143,7 @@ class StackController extends Controller
 
         $stack->save();
 
-        return redirect('stack.index')->with('message', 'Stack updated!');;
+        return view('stack.index')->with('message', 'Stack updated!');;
     }
 
     /**

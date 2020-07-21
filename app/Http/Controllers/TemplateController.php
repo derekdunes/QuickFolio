@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use File;
 use App\Template;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
 
 class TemplateController extends Controller
 {
@@ -41,9 +41,18 @@ class TemplateController extends Controller
 
         $name = $req->name;
 
+        $path = $req->path;
+
+        //check whether path exist already
+        $temp = Template::where('path','=', $path)->get();
+
+        if (isset($temp) && count($temp) > 0) {
+            return back()->with('message', 'The template path already exist choose new path');
+        }
+
         if ($req->hasFile('image')) {
 
-            $image = Input::file('image');
+            $image = $req->image;
             $filename = $image->getClientOriginalName();
 
             $filename = pathinfo($filename, PATHINFO_FILENAME);
@@ -53,7 +62,7 @@ class TemplateController extends Controller
             $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
 
             //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config::get('image.theme_folder'), $fullname);
+            $upload = $image->move(Config('image.theme_folder'), $fullname);
 
             if ($upload) {
 
@@ -65,9 +74,13 @@ class TemplateController extends Controller
         if($name)
             $template->name = $name;
 
+        if($path)
+            $template->path = $path;
+
+
         $template->save();
 
-        return redirect('template.index')->with('message', 'Template Created Successfully'); 
+        return redirect('template')->with('message', 'Template Created Successfully'); 
 
     }
 
@@ -104,9 +117,13 @@ class TemplateController extends Controller
     {
 
         $name = $req->name;
+        $path = $req->path;
 
         if($name)
             $template->name = $name;
+
+        if($name)
+            $template->path = $path;
 
         if ($req->hasFile('image')) {
 
@@ -141,7 +158,7 @@ class TemplateController extends Controller
 
         $template->save();
 
-        return redirect('template.index')->with('message', 'Template updated Successfully'); 
+        return redirect('template')->with('message', 'Template updated Successfully'); 
         
     }
 
@@ -153,7 +170,7 @@ class TemplateController extends Controller
      */
     public function destroy(Template $template)
     {   
-        $template->users()->delete()
+        $template->users()->delete();
 
         $template->delete();
     }
