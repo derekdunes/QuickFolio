@@ -15,6 +15,17 @@
                     @endif
 
                     {{ __('You are logged in!') }}
+
+                        <div class="form-group row mb-0">
+                            <div class="col-md-6 offset-md-4">
+                                <a href="{{ Route('user.edit', Auth::user()->id) }}">
+                                    <button  class="btn btn-primary">
+                                        Update Profile
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
+
                 </div>
             </div>
         </div>

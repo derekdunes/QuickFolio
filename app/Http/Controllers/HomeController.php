@@ -34,7 +34,7 @@ class HomeController extends Controller
 
      public function create()
     {
-        return view('home.create');
+        //return view('user.create');
     }
 
     /**
@@ -45,47 +45,7 @@ class HomeController extends Controller
      */
     public function store(Request $req)
     {
-        $user = new User();
-
-        $name = $req->name;
-        $url = $req->url;
-
-        if ($name) 
-            $project->name = $name;
-
-        if ($url)
-            $project->url = $url;
-
-        if (auth()->user()->id)
-            $project->user_id = auth()->user()->id;
-
-        //Add image
-        if ($req->hasFile('image')) {
-            # code...
-            $image = $req->image;
-            $filename = $image->getClientOriginalName();
-
-            $filename = pathinfo($filename, PATHINFO_FILENAME);
-
-            //in production check if url/image file name already exist
-            //make the url friendly
-            $fullname = Str::slug(Str::random(8).$filename) . '.' . $image->getClientOriginalExtension();
-
-            //upload image to upload folder then make a thumbnail from the upload image
-            $upload = $image->move(Config('image.project_folder'), $fullname);
-
-            if ($upload) {
-
-                if ($fullname) 
-                    $project->image = $fullname;
-            }
-
-        }
-
-        $project->save();
-
-        return redirect('project')->with('message', $name . ' created successfully');
-
+        //no need for this since the user is created during registration
     }
 
     /**
@@ -96,23 +56,23 @@ class HomeController extends Controller
      */
     public function show(User $user)
     {			
-    				//increment the user views
-    				$count = $user->views + 1;
+    	//increment the user views
+    	$count = $user->views + 1;
     				
-    				$user->views = $count
+    	$user->views = $count;
     				
-    				$user->save();
+    	$user->save();
     				
         //get the theme
         $theme = $user->template()->name;
 							
-							$path = 'theme.' . $theme . '.show';
-							$default = 'theme.default.show';
+		$path = 'theme.' . $theme . '.show';
+		$default = 'theme.default.show';
 							
-							//if theme path does not exist
-							//switch to default theme
+		//if theme path does not exist
+		//switch to default theme
         if(View::exists($path)){
-        			return view($path, compact('user'));
+            return view($path, compact('user'));
         }
        
         return view($default, compact('user'));
@@ -127,7 +87,7 @@ class HomeController extends Controller
      */
     public function edit(User $user)
     {
-        return view('user.edit', compact('project'));
+        return view('user.edit', compact('user'));
     }
 
     /**
@@ -139,12 +99,7 @@ class HomeController extends Controller
      */
     public function update(Request $req, User $user)
     {   
-        //if this logged in user is not the user that created the project
-        //then reject the data
-        if (auth()->user()->id != $user->id)
-            return back()->with('error','This is not your project so you cant Update it');
-
-
+    
         $name = $req->name;
         $title = $req->title;
         $password = $req->password;
@@ -207,37 +162,24 @@ class HomeController extends Controller
 
                 if ($fullname) 
                     $user->image = $fullname;
-
             }
         }
 
         $user->save();
-
-
-							$stack = Stack::all();
 	
-	       return redirect('user.chooseStack', compact('stack'));
+	   return redirect('selectStack')->with('messgae', 'This supposed');
 
     }
 
+    public function showStacks(){
+
+        $stack = Stack::all();
+
+        return view('user.chooseStack', compact('stack'));        
+    }
+
+
     public function updateStack(Request $req, User $user){
-
-        
-
-        if(isset($stacks)  && count($stacks) > 0)
-        {
-            //for each cast
-            //find the cast and add to the pivot table 
-            foreach ($stacks as $stack) { 
-
-                $stack = Stack::find($stack);
-
-                if ($stack) {
-                    $User->stacks()->attach($stack);
-                }
-
-            }
-       }
 
         $stacks = $req->stacks;
         $levels = $request->levels;
@@ -318,6 +260,7 @@ class HomeController extends Controller
  
             
         $template = Template::all();
+
         //redirect to choose theme form
         return view('user.chooseTemplate', compact('template'));           
         

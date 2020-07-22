@@ -8,7 +8,8 @@
                 <div class="card-header">Update Profile</div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('project.store') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('user.update', Auth::user()->id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="_method" value="PUT">
                         @csrf
 
                         <div class="form-group row">
@@ -24,7 +25,7 @@
                             </div>
                         </div>
 																					
-																				                  <div class="form-group row">
+						<div class="form-group row">
                             <label for="title" class="col-md-4 col-form-label text-md-right">Title</label>
 
                             <div class="col-md-6">
@@ -41,7 +42,7 @@
                             <label for="bio" class="col-md-4 col-form-label text-md-right">Bio</label>
 
                             <div class="col-md-6">
-                                <input id="bio" type="text" class="form-control @error('bio') is-invalid @enderror" name="bio" value="{{ $user->bio }}" required  autofocus>
+                                <textarea id="bio" name="bio" rows="5" class="form-control @error('bio') is-invalid @enderror" placeholder="Complete your Bio" required>{{ $user->bio }}</textarea>
                                 @error('bio')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -65,7 +66,7 @@
                         </div>
                         
                                                 <div class="form-group row">
-                            <label for="url" class="col-md-4 col-form-label text-md-right">LinkedIn url</label>
+                            <label for="linkedin" class="col-md-4 col-form-label text-md-right">LinkedIn</label>
 
                             <div class="col-md-6">
                                 <input id="linkedin" type="text" class="form-control @error('linkedin') is-invalid @enderror" name="linkedin" value="{{ $user->linkedin }}" required  autofocus>
@@ -77,8 +78,8 @@
                             </div>
                         </div>
                         
-                                                <div class="form-group row">
-                            <label for="github" class="col-md-4 col-form-label text-md-right">Github url</label>
+                        <div class="form-group row">
+                            <label for="github" class="col-md-4 col-form-label text-md-right">Github</label>
 
                             <div class="col-md-6">
                                 <input id="github" type="text" class="form-control @error('github') is-invalid @enderror" name="github" value="{{ $user->github }}" required  autofocus>
@@ -90,7 +91,7 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="url" class="col-md-4 col-form-label text-md-right">Twitter url</label>
+                            <label for="twitter" class="col-md-4 col-form-label text-md-right">Twitter</label>
 
                             <div class="col-md-6">
                                 <input id="twitter" type="text" class="form-control @error('twitter') is-invalid @enderror" name="twitter" value="{{ $user->twitter }}" required  autofocus>
@@ -102,7 +103,7 @@
                             </div>
                         </div>
                         
-                                                <div class="form-group row">
+                        <div class="form-group row">
                             <label for="instagram" class="col-md-4 col-form-label text-md-right">Instagram</label>
 
                             <div class="col-md-6">

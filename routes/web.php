@@ -22,9 +22,10 @@ Route::resource('stack','StackController');
 Route::resource('project','ProjectController');
 Route::resource('user', 'HomeController');
 
+Route::get('user/chooseStack', 'HomeController@chooseStack')->name('selectStack');
 
 
-
+//Route::get('user/profile', 'HomeController.edit')->name('profile');
 
 
 Auth::routes();
