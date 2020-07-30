@@ -16,8 +16,8 @@ class CreateJoinTableUserStack extends Migration
         Schema::create('user_stack', function (Blueprint $table) {
             $table->integer('user_id');
             $table->integer('stack_id');
-            $table->string('level');
-            $table->string('years');            
+            $table->integer('level')->default(1);
+            $table->integer('years')->default(1);            
             $table->primary(['user_id','stack_id']);
         });
     }

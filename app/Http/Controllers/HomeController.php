@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use View;
 use File;
 use App\User;
-use App\Template;
 use App\Stack;
+use App\Title;
+use App\Template;
 use App\Project;
+use App\Level;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class HomeController extends Controller
 {
@@ -19,7 +23,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['show','contact','features','pricing']);
     }
 
     /**
@@ -28,15 +32,54 @@ class HomeController extends Controller
      * @return \Illuminate\Contracts\Support\Renderable
      */
     public function index()
+    {   
+        $user = User::find(auth()->user()->id);
+
+        return view('home', compact('user'));
+        
+    }
+
+    public function contact()
     {
+        return view('contact');
+    }
+
+    public function features(){
+
+        return view('features');
+    
+    }
+
+    public function pricing(){
+
+        return view('pricing');
+    
+    }
+
+    public function sendMail(Request $req)
+    {
+        
+        $name = $req->name;
+
+        $email = $req->email;
+
+        $message = $req->message . ' by ' . $name . ' with email ' . $email;
+
+        if ($name && $email && $message) {
+
+            //Mail::to('mbahderek@gmail.com')->send($message);
+        
+        }
+
         return view('home');
     }
 
-     public function create()
+    public function create()
     {
         //return view('user.create');
     }
 
+    
     /**
      * Store a newly created resource in storage.
      *
@@ -48,31 +91,62 @@ class HomeController extends Controller
         //no need for this since the user is created during registration
     }
 
+    
     /**
      * Display the specified resource.
      *
      * @param  \App\Project  $project
      * @return \Illuminate\Http\Response
      */
-    public function show(User $user)
-    {			
-    	//increment the user views
-    	$count = $user->views + 1;
+  //   public function show($id)
+  //   {			
+
+  //       $user = User::with('stacks','projects')->find($id);
+
+  //   	//increment the user views
+  //   	$count = $user->views + 1;
     				
-    	$user->views = $count;
+  //   	$user->views = $count;
     				
-    	$user->save();
+  //   	$user->save();
     				
-        //get the theme
-        $theme = $user->template()->name;
+  //       //get the theme
+  //       $theme = Template::find($user->template_id);
 							
-		$path = 'theme.' . $theme . '.show';
-		$default = 'theme.default.show';
+  //   	$path = 'themes.' . $theme->path  . '.show';
+		// $default = 'themes.default.show';
 							
-		//if theme path does not exist
-		//switch to default theme
+		// //if theme path does not exist
+		// //switch to default theme
+  //       if(View::exists($path)){
+  //           return view($path, compact('user'));
+  //       }
+       
+  //       return view($default, compact('user'));
+
+  //   }
+
+    public function previewTemplate($id){
+
+        //if the user profile is incomplete
+        //return back
+        $user = User::with('projects', 'stacks')->find(auth()->user()->id);
+
+        if ( !isset($user->projects) && !isset($user->stacks) ) {
+            return back()->with('message', 'Please complete your profile to preview theme');
+        }
+
+        $theme = Template::find($id);
+
+        $path = 'themes.' . $theme->path  . '.show';
+        $default = 'themes.default.show';
+                            
+        //if theme path does not exist
+        //switch to default theme
         if(View::exists($path)){
+
             return view($path, compact('user'));
+
         }
        
         return view($default, compact('user'));
@@ -85,9 +159,13 @@ class HomeController extends Controller
      * @param  \App\Project  $project
      * @return \Illuminate\Http\Response
      */
-    public function edit(User $user)
-    {
-        return view('user.edit', compact('user'));
+    public function edit($id)
+    {   
+        $user = User::find(auth()->user()->id);
+  
+        $titles = Title::all();
+
+        return view('user.edit', compact('user','titles'));
     }
 
     /**
@@ -114,7 +192,7 @@ class HomeController extends Controller
             $user->name = $name;
 
         if ($title) 
-            $user->title = $title;
+            $user->title_id = $title;
 
         if ($password)
             $user->password = Hash::make($password);
@@ -167,23 +245,39 @@ class HomeController extends Controller
 
         $user->save();
 	
-	   return redirect('selectStack')->with('messgae', 'This supposed');
+	   return redirect('selectStack')->with('message', 'This is supposed to work');
 
     }
 
     public function showStacks(){
 
-        $stack = Stack::all();
+        $stacks = Stack::all();
 
-        return view('user.chooseStack', compact('stack'));        
+        $levels = Level::all();
+
+        $user = User::with('stacks')->find(auth()->user()->id);
+
+        if (count($user->stacks) > 0) {
+            //return view for updating stack
+            return view('user.updateStack', compact('stacks', 'user', 'levels'));
+
+        } else {
+            
+            //return a view for adding new stack
+            return view('user.chooseStack', compact('stacks', 'user', 'levels'));
+
+        }
+
     }
 
 
-    public function updateStack(Request $req, User $user){
+    public function updateNewStacks(Request $req, $id){
+
+        $user = User::with('stacks')->find($id);
 
         $stacks = $req->stacks;
-        $levels = $request->levels;
-        $years = $request->years;
+        $levels = $req->levels;
+        $years = $req->years;
 
         //check if casts amd roles is set and if the aew equal
         if(isset($stacks) && isset($levels) && isset($years) && count($stacks) == count($levels) && count($stacks) == count($years))
@@ -195,20 +289,64 @@ class HomeController extends Controller
                 $stack = Stack::find($stacks[$i]);
 
                 if ($stack) {
-                    $user->stacks()->sync($stack, ['level' => $levels[$i], 'years' => $years[$i] ], false);
+
+                    $user->stacks()->attach($stack, ['level' => $levels[$i] , 'years' => $years[$i] ]);    
+                       
                 }
 
             }
         }
 
-       return view('user.createProject', compact('user'));
+        return redirect('createProject')->with('message', 'This supposed to work');
 
     }
 
-    public function updateProjects(Request $req)
+    public function updateStacks(Request $req, $id){
+
+        $user = User::with('stacks')->find($id);
+
+        $stacks = $req->stacks;
+        $levels = $req->levels;
+        $years = $req->years;
+
+        //check if casts amd roles is set and if the aew equal
+        if(isset($stacks) && isset($levels) && isset($years) && count($stacks) == count($levels) && count($stacks) == count($years))
+        {
+
+            //laravel 7 new technique of syncing
+            //pending fix for saving attributes
+            $user->stacks()->sync($stacks, [ 'level' => $levels , 'years' => $years ]);   
+
+        }
+
+        return redirect('createProject')->with('message', 'This supposed to work');
+
+    }
+
+    public function showProjects(){
+
+        $user = User::with('projects')->find(auth()->user()->id);
+
+        //return a view for adding new stack
+        return view('user.createProject');
+
+    }
+
+        public function showTemplates(){
+
+        $templates = Template::with('plan')->get()  ;
+
+        $user = User::find(auth()->user()->id);
+
+        //redirect to choose theme form
+        return view('user.chooseTemplate', compact('templates', 'user'));
+    
+    }
+
+    public function updateProjects(Request $req, $id)
     {   
 
-        if ($request->hasFile('image')) {
+        if ($req->hasFile('image')) {
             # code...
 
             $images = $req->image;
@@ -250,7 +388,7 @@ class HomeController extends Controller
                             $project->name = $names[$i];
 
                         if (auth()->user()->id)
-                            $project->user_id = auth()->user()->id;
+                            $project->user_id = $id;
 
                         $project->save();
                             
@@ -258,11 +396,7 @@ class HomeController extends Controller
 
             }
  
-            
-        $template = Template::all();
-
-        //redirect to choose theme form
-        return view('user.chooseTemplate', compact('template'));           
+           return redirect('selectTemplate')->with('message', 'This supposed to work');          
         
         }else{
 
@@ -285,25 +419,26 @@ class HomeController extends Controller
      * @param  \App\Project  $project
      * @return \Illuminate\Http\Response
      */
-    public function updateTemplate(Request $req, User $user)
+    public function updateTemplate(Request $req, $id)
     {   
-        //if this logged in user is not the user that created the project
-        //then reject the data
-        if (auth()->user()->id != $user->id)
-            return back()->with('error','This is not your project so you cant Update it');
-
+        $user = User::find($id);
 
         $template = $req->template;
         
-
-        if ($template) 
+        if ($template){ 
+        
             $user->template_id = $template;
+        
+        }else{
+        
+            return back()->with('message', 'Please select a theme of your choice');
+        
+        }
 
         $user->save();
         
         return redirect('home')->with('success', 'Your Portfolio was added Successfully! ');
     }
-
     
 
     /**

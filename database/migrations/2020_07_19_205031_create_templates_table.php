@@ -15,9 +15,11 @@ class CreateTemplatesTable extends Migration
     {
         Schema::create('templates', function (Blueprint $table) {
             $table->id();
+            $tablle->integer('plan_id');//this is is to know if the theme is premium or free
             $table->string('name');
             $table->string('path')->unique();
             $table->string('image');
+            $table->text('requirement');
             $table->timestamps();
         });
     }

@@ -45,8 +45,14 @@ class User extends Authenticatable
         return $this->hasMany(Project::class, 'user_id');
     }
 
+    public function payment(){
+        return $this->hasOne(Payment::class, 'id');
+    }
+
     public function template(){
-        return $this->belongTo(Template::class);
+
+        return $this->hasOne(Template::class, 'id');
+    
     }
 
 }
